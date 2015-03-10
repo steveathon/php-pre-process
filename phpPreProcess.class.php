@@ -15,8 +15,12 @@
 		private $intParams = array();
 		private $strParams = array();
 		public $Method = false;
+		private $_Service;
 		
-		function __construct() {
+		/** __construct() 
+		 * Heavy lifting still happens here. It probably shouldn't.
+		 */
+		public function __construct() {
 			
 			if ( isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] == 'GET' ) {
 				$this->Params = $_GET;
@@ -89,7 +93,7 @@
 			
 		}
 		
-		function fetchParam($ParamName = NULL, $SanatizeAS = NULL) {
+		public function fetchParam($ParamName = NULL, $SanatizeAS = NULL) {
 			if ( isset($ParamName) && strlen($ParamName) > 0 && !is_numeric($ParamName) ) {
 				if ( isset($this->Params[$ParamName]) ) {
 					return $this->Params[$ParamName];
@@ -98,14 +102,23 @@
 			return false;
 		}
 		
-		function hasPost() { 
+		public function getServiceParam($ParamName = NULL,$SanatizeAS = NULL) {
+			if ( isset($ParamName) && strlen($ParamName) > 0 && !is_numeric($ParamName) ) {
+				if ( isset($this->_Service[$ParamName]) ) {
+					return $this->_Service[$ParamName];
+				}
+			}
+			return false;
+		}
+		
+		public function hasPost() { 
 			if ( $this->Method == 'post' ) {
 				return true;
 			}
 			return false;
 		}
 		
-		function uploadedFiles() {
+		public function uploadedFiles() {
 			if ( isset($_FILES) && @count($_FILES) > 0 ) {
 				$FileImports = array();
 				foreach ( array_keys($_FILES) as $theFile ) {
@@ -134,7 +147,7 @@
 			return false;
 		}
 		
-		function cleanAll() {
+		public function cleanAll() {
 			$CleanArray = array();
 			foreach ( array_keys($this->Params) as $ParamFetched ) {
 				$CleanArray[$ParamFetched]['mysql'] = mysql_real_escape_string($this->Params[$ParamFetched]);
