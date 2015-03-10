@@ -18,7 +18,6 @@
 		
 		function __construct() {
 			
-			global $RequestMade,$ResponseMade;
 			if ( isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] == 'GET' ) {
 				$this->Params = $_GET;
 				$this->Method = 'get';
@@ -27,7 +26,7 @@
 				$this->Params = $_POST + $_GET;
 				if ( @count($_POST) > 0 ) {
 					$this->Method = 'post';
-					
+					// Support for you know what.
 					if ( $this->Params['signed_request'] && $_SERVER['HTTP_ORIGIN'] ) {
 						$this->Facebook = TRUE;
 					}
@@ -37,6 +36,46 @@
 				$this->Params = array();
 			}
 			
+			if ( isset($this->Params['num']) ) {
+				if ( $this->Params['num'] > 0 && $this->Params['num'] <= 100 ) {
+					$this->Params['num'] = $this->fetchParam('num',validnum);
+				}
+				else {
+					$this->Params['num'] = 10;
+				}
+			}
+			else {
+				$this->Params['num'] = 10;
+			}
+			
+			if ( isset($this->Params['start']) ) {
+				// This is a pagination protection step
+				if ( $this->Params['start'] > 0 && ($this->Params['start'] + $this->Params['num'] ) <= 1000 ) {
+					$this->Params['start'] = $this->fetchParam('start',validstart);
+				}
+				else {
+					$this->Params['start'] = 0;
+				}
+			}
+			else {
+				$this->Params['start'] = 0;
+			}
+			
+			define ('validint','int');
+			define ('validstring','string');
+			define ('validlongtext','string');
+			define ('validgeo','point');
+			define ('validdouble','double');
+			
+			// Detect the auth password
+			if ( isset($_SERVER['PHP_AUTH_USER']) ) {
+				$this->_Service['authn']['http']['username'] = $_SERVER['PHP_AUTH_USER'];
+				if ( isset($_SERVER['PHP_AUTH_PW']) ) {
+					$this->_Service['authn']['http']['password'] = $_SERVER['PHP_AUTH_PW'];
+				}
+			}
+			
+			// Dropping this down to capture at the end of all runs
 			if ( is_array($this->Params) && @count($Params) > 0 ) {
 				foreach(array_keys($this->Params) as $theParam) {
 					if ( is_numeric($this->Params[$theParam]) ) {
@@ -48,58 +87,22 @@
 				}
 			}
 			
-			if ( isset($this->Params['num']) ) {
-				if ( $this->Params['num'] > 0 && $this->Params['num'] <= 100 ) {
-					$ResponseMade['params']['num'] = $this->fetchParam('num',validnum);
-				}
-				else {
-					$ResponseMade['params']['num'] = 10;
-					$this->Params['num'] = 10;
-				}
-			}
-			else {
-				$ResponseMade['params']['num'] = 10;
-				$this->Params['num'] = 10;
-			}
-		
-			
-			if ( isset($this->Params['start']) ) {
-				if ( $this->Params['start'] > 0 && ($this->Params['start'] + $this->Params['num'] ) <= 1000 ) {
-					$ResponseMade['params']['start'] = $this->fetchParam('start',validstart);
-				}
-				else {
-					$ResponseMade['params']['start'] = 0;
-					$this->Params['start'] = 0;
-				}
-			}
-			else {
-				$ResponseMade['params']['start'] = 0;
-				$this->Params['start'] = 0;
-			}
-			
-			define ('validint','int');
-			define ('validstring','string');
-			define ('validlongtext','string');
-			define ('validgeo','point');
-			define ('validdouble','double');
 		}
 		
 		function fetchParam($ParamName = NULL, $SanatizeAS = NULL) {
-			$return = false;
 			if ( isset($ParamName) && strlen($ParamName) > 0 && !is_numeric($ParamName) ) {
 				if ( isset($this->Params[$ParamName]) ) {
-					$return = $this->Params[$ParamName];
+					return $this->Params[$ParamName];
 				}
 			}
-			return $return;
+			return false;
 		}
 		
 		function hasPost() { 
-			$return = false;
 			if ( $this->Method == 'post' ) {
-				$return = true;
+				return true;
 			}
-			return $return;
+			return false;
 		}
 		
 		function uploadedFiles() {
